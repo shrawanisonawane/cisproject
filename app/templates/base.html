@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Sanjivani University Certificate Registry{% endblock %}</title>
+  <link rel="stylesheet" href="/static/css/tokens.css">
+  <link rel="stylesheet" href="/static/css/base.css">
+  <link rel="stylesheet" href="/static/css/components.css">
+</head>
+<body>
+  <header class="top-bar">
+    <div class="container top-bar-inner">
+      <a href="/" class="brand">Sanjivani University Certificate Registry</a>
+      <nav class="top-nav" aria-label="Main Navigation">
+        <a href="/verify" class="top-nav-link">Verify</a>
+        <a href="/#how-it-works" class="top-nav-link">How it works</a>
+        <a href="/issuer" class="top-nav-link">
+          Issuer workspace <span class="tag-local">Local only</span>
+        </a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="main-content">
+    <div class="container">
+      {% block content %}{% endblock %}
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <div>Sanjivani University &bull; Academic Credential Registry</div>
+      <div>Cryptography &amp; Information Security Project</div>
+    </div>
+  </footer>
+
+  <script src="/static/js/app.js"></script>
+</body>
+</html>

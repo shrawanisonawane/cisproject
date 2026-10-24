@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% import "components/macros.html" as ui %}
+
+{% block title %}Audit History - Meridian Certificate Registry{% endblock %}
+
+{% block content %}
+{{ ui.page_header(
+  "Issuer workspace (local only)",
+  "Audit history",
+  "Append-only, hash-chained log recording all issuance, revocation, and demo actions."
+) }}
+
+<div class="layout-2col">
+  <div class="layout-main">
+    <div class="panel result-banner {% if chain_ok %}status-valid{% else %}status-tampered{% endif %}">
+      <div class="result-banner-header">
+        {% if chain_ok %}
+        <span class="status-badge status-valid">{{ ui.icon_check() }} Chain Intact</span>
+        {% else %}
+        <span class="status-badge status-tampered">{{ ui.icon_x() }} Chain Broken</span>
+        {% endif %}
+      </div>
+      <p class="result-banner-message">{{ chain_message }}</p>
+    </div>
+
+    <section class="panel">
+      <h2 class="panel-title">Audit trail ({{ entries|length }} entries)</h2>
+      {% if entries %}
+      <div class="table-wrapper">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Timestamp (UTC)</th>
+              <th>Action</th>
+              <th>Certificate ID</th>
+              <th>Details</th>
+              <th>Hash</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for e in entries %}
+            <tr>
+              <td>{{ e.id }}</td>
+              <td class="mono">{{ e.ts }}</td>
+              <td><strong>{{ e.action }}</strong></td>
+              <td class="mono">
+                {% if e.certificate_id %}
+                <a href="/issuer/certificates/{{ e.certificate_id }}">{{ e.certificate_id }}</a>
+                {% else %}
+                —
+                {% endif %}
+              </td>
+              <td>{{ e.details or '—' }}</td>
+              <td class="mono" title="{{ e.entry_hash }}">{{ e.entry_hash[:12] }}…</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p class="empty-state">No audit log entries recorded yet.</p>
+      {% endif %}
+    </section>
+
+    <div class="btn-row">
+      <a href="/issuer" class="btn btn-secondary">Back to dashboard</a>
+    </div>
+  </div>
+
+  <div class="layout-aside">
+    {{ ui.note_panel(
+      "About this log",
+      "Each entry includes the SHA-256 hash of the immediately preceding entry. Any alteration or removal of an earlier row immediately invalidates subsequent entry hashes, revealing tampering. However, an attacker with direct database write access could recalculate the entire chain forward."
+    ) }}
+  </div>
+</div>
+{% endblock %}

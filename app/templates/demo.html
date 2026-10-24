@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% import "components/macros.html" as ui %}
+
+{% block title %}Tamper Lab - Sanjivani University Certificate Registry{% endblock %}
+
+{% block content %}
+{{ ui.page_header(
+  "Demonstration tools",
+  "Tamper lab",
+  "Modifies stored records. For classroom demonstration only."
+) }}
+
+<div class="panel note-panel hero-actions">
+  <p><strong>Notice:</strong> These tools change stored records to demonstrate detection. They never fake a result.</p>
+</div>
+
+<div class="layout-2col">
+  <div class="layout-main">
+    <section class="panel">
+      <h2 class="panel-title">1. Choose a certificate</h2>
+      <form action="/demo" method="GET" class="filter-form">
+        <div class="field">
+          <label for="cert-select">Select certificate to inspect</label>
+          <select id="cert-select" name="cert">
+            {% for c in certificates %}
+            <option value="{{ c.certificate_id }}"{% if selected_cert and selected_cert.certificate_id == c.certificate_id %} selected{% endif %}>
+              {{ c.certificate_id }} — {{ c.student_name }} ({{ c.course }})
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="btn-row">
+          <button type="submit" class="btn btn-secondary">Load certificate</button>
+        </div>
+      </form>
+
+      {% if selected_cert and verification_result %}
+      <div class="result-banner status-{{ verification_result.status|lower }} tech-note">
+        <div class="result-banner-header">
+          {{ ui.status_badge(verification_result.status) }}
+        </div>
+        <div class="kv-list">
+          {{ ui.kv("Hash comparison", "Match" if verification_result.hash_matches else "Mismatch") }}
+          {{ ui.kv("Signature verification", "Passed" if verification_result.signature_valid else "Failed") }}
+        </div>
+        <p class="field-hint tech-note">{{ verification_result.message }}</p>
+      </div>
+      {% endif %}
+    </section>
+
+    {% if selected_cert %}
+    <section class="panel">
+      <h2 class="panel-title">2. Edit a signed field</h2>
+      <form action="/demo/tamper" method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+        <input type="hidden" name="certificate_id" value="{{ selected_cert.certificate_id }}">
+
+        <div class="field">
+          <label for="field">Field to tamper</label>
+          <select id="field" name="field">
+            <option value="student_name">student_name (Current: {{ selected_cert.student_name }})</option>
+            <option value="student_roll_no">student_roll_no (Current: {{ selected_cert.student_roll_no }})</option>
+            <option value="program">program (Current: {{ selected_cert.program }})</option>
+            <option value="course">course (Current: {{ selected_cert.course }})</option>
+            <option value="certificate_title">certificate_title (Current: {{ selected_cert.certificate_title }})</option>
+            <option value="grade_or_result">grade_or_result (Current: {{ selected_cert.grade_or_result }})</option>
+            <option value="issue_date">issue_date (Current: {{ selected_cert.issue_date }})</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="new_value">New (tampered) value</label>
+          <input type="text" id="new_value" name="new_value" placeholder="Enter modified value..." required>
+        </div>
+
+        <div class="field checkbox-field">
+          <input type="checkbox" id="recompute_hash" name="recompute_hash">
+          <label for="recompute_hash">Also recompute the stored hash (a smarter attacker)</label>
+        </div>
+
+        <div class="btn-row">
+          <button type="submit" class="btn btn-primary">Apply change</button>
+        </div>
+      </form>
+
+      {% if has_backup %}
+      <form action="/demo/restore" method="POST" class="tech-note">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+        <input type="hidden" name="certificate_id" value="{{ selected_cert.certificate_id }}">
+        <div class="btn-row">
+          <button type="submit" class="btn btn-secondary">Restore original record</button>
+        </div>
+      </form>
+      {% endif %}
+    </section>
+
+    <section class="panel">
+      <h2 class="panel-title">3. Edit a verification bundle</h2>
+      <form action="/demo/bundle-check" method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+        <div class="field">
+          <label for="bundle_text">Bundle JSON (edit any value inside payload to test offline tamper detection)</label>
+          <textarea id="bundle_text" name="bundle_text" rows="8">{{ bundle_json }}</textarea>
+        </div>
+        <div class="btn-row">
+          <button type="submit" class="btn btn-primary">Verify edited bundle</button>
+        </div>
+      </form>
+
+      {% if bundle_result %}
+      <div class="result-banner status-{{ bundle_result.status|lower }} tech-note">
+        <div class="result-banner-header">
+          {{ ui.status_badge(bundle_result.status) }}
+        </div>
+        <p class="result-banner-message">{{ bundle_result.message }}</p>
+      </div>
+      {% endif %}
+    </section>
+    {% endif %}
+  </div>
+
+  <div class="layout-aside">
+    {{ ui.note_panel(
+      "What this shows",
+      "Editing a stored field without re-signing breaks the digital signature. Recomputing the SHA-256 hash makes the stored hash match, but the RSA-PSS signature still fails verification because the attacker lacks the issuer's private key. A hash alone is not proof of who issued a certificate."
+    ) }}
+  </div>
+</div>
+{% endblock %}

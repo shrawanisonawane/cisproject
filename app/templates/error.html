@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% import "components/macros.html" as ui %}
+
+{% block title %}Error {{ status_code }} - Meridian Certificate Registry{% endblock %}
+
+{% block content %}
+{{ ui.page_header(
+  "Error " ~ status_code,
+  title or ("Request error (" ~ status_code ~ ")"),
+  message or "The requested operation could not be completed."
+) }}
+
+<div class="layout-2col">
+  <div class="layout-main">
+    <div class="panel result-banner status-tampered">
+      <div class="result-banner-header">
+        <span class="status-badge status-tampered">{{ ui.icon_ban() }} Access Denied</span>
+      </div>
+      <p class="result-banner-message">{{ message }}</p>
+    </div>
+
+    <div class="btn-row">
+      {% if status_code == 403 and error_code == 'issuer_local_only' %}
+      <a href="/verify" class="btn btn-primary">Go to verification</a>
+      <a href="/" class="btn btn-secondary">Home</a>
+      {% else %}
+      <a href="/" class="btn btn-primary">Return to home</a>
+      <a href="/verify" class="btn btn-secondary">Verification page</a>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="layout-aside">
+    {{ ui.note_panel(
+      "Security rule",
+      "The issuer workspace and demonstration tools are restricted by network address to localhost (127.0.0.1) and require valid same-origin CSRF tokens. Public verification routes remain accessible to all network clients."
+    ) }}
+  </div>
+</div>
+{% endblock %}

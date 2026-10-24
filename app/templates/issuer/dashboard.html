@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% import "components/macros.html" as ui %}
+
+{% block title %}Issuer Dashboard - Sanjivani University Certificate Registry{% endblock %}
+
+{% block content %}
+{{ ui.page_header(
+  "Issuer workspace (local only)",
+  "Issued certificates",
+  "Manage and inspect academic credentials registered on the local registry node."
+) }}
+
+<div class="btn-row hero-actions">
+  <a href="/issuer/new" class="btn btn-primary">Issue new certificate</a>
+  <a href="/issuer/audit" class="btn btn-secondary">Audit history</a>
+</div>
+
+<div class="layout-2col">
+  <div class="layout-main">
+    <section class="panel">
+      <form action="/issuer" method="GET" class="filter-form">
+        <div class="filter-grid">
+          <div class="field">
+            <label for="q">Search</label>
+            <input type="text" id="q" name="q" value="{{ q or '' }}" placeholder="Name, roll no, or ID...">
+          </div>
+          <div class="field">
+            <label for="status">Status</label>
+            <select id="status" name="status">
+              <option value="all"{% if status == 'all' %} selected{% endif %}>All</option>
+              <option value="active"{% if status == 'active' %} selected{% endif %}>Active</option>
+              <option value="revoked"{% if status == 'revoked' %} selected{% endif %}>Revoked</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="sort">Sort by</label>
+            <select id="sort" name="sort">
+              <option value="issue_date_desc"{% if sort == 'issue_date_desc' %} selected{% endif %}>Issue date (newest)</option>
+              <option value="issue_date_asc"{% if sort == 'issue_date_asc' %} selected{% endif %}>Issue date (oldest)</option>
+              <option value="name_asc"{% if sort == 'name_asc' %} selected{% endif %}>Student name (A-Z)</option>
+            </select>
+          </div>
+        </div>
+        <div class="btn-row">
+          <button type="submit" class="btn btn-secondary">Apply filters</button>
+          {% if q or (status and status != 'all') or (sort and sort != 'issue_date_desc') %}
+          <a href="/issuer" class="btn btn-secondary">Clear</a>
+          {% endif %}
+        </div>
+      </form>
+    </section>
+
+    <section class="panel">
+      <h2 class="panel-title">Registered certificates ({{ certificates|length }})</h2>
+      {% if certificates %}
+      <div class="table-wrapper">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Certificate ID</th>
+              <th>Student</th>
+              <th>Course</th>
+              <th>Issue date</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for c in certificates %}
+            <tr>
+              <td class="mono">{{ c.certificate_id }}</td>
+              <td>{{ c.student_name }}</td>
+              <td>{{ c.course }}</td>
+              <td>{{ c.issue_date }}</td>
+              <td>
+                {% if c.revoked %}
+                <span class="status-badge status-revoked">{{ ui.icon_ban() }} Revoked</span>
+                {% else %}
+                <span class="status-badge status-valid">{{ ui.icon_check() }} Active</span>
+                {% endif %}
+              </td>
+              <td>
+                <a href="/issuer/certificates/{{ c.certificate_id }}" class="btn btn-secondary table-btn">Open</a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p class="empty-state">No certificates matched your query.</p>
+      {% endif %}
+    </section>
+  </div>
+
+  <div class="layout-aside">
+    {{ ui.note_panel(
+      "Local only",
+      "This workspace opens only from this computer (loopback network interface 127.0.0.1). There is no username or password login; access is restricted by network location. Anyone on the local machine can issue credentials using the server's private key."
+    ) }}
+  </div>
+</div>
+{% endblock %}

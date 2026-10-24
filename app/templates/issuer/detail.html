@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% import "components/macros.html" as ui %}
+
+{% block title %}Certificate {{ cert.certificate_id }} - Issuer Workspace{% endblock %}
+
+{% block content %}
+{{ ui.page_header(
+  "Issuer workspace (local only)",
+  cert.certificate_id,
+  "Registered on " ~ cert.created_at ~ " UTC."
+) }}
+
+<div class="layout-2col">
+  <div class="layout-main">
+    <div class="panel result-banner status-{{ result.status|lower }}">
+      <div class="result-banner-header">
+        {{ ui.status_badge(result.status) }}
+      </div>
+      <p class="result-banner-message">{{ result.message }}</p>
+    </div>
+
+    <section class="panel">
+      <h2 class="panel-title">Certificate details</h2>
+      <div class="kv-list">
+        {{ ui.kv("Student name", cert.student_name) }}
+        {{ ui.kv("Roll number", cert.student_roll_no) }}
+        {{ ui.kv("Program", cert.program) }}
+        {{ ui.kv("Course", cert.course) }}
+        {{ ui.kv("Certificate title", cert.certificate_title) }}
+        {{ ui.kv("Grade / Result", cert.grade_or_result or '—') }}
+        {{ ui.kv("Issue date", cert.issue_date) }}
+        {{ ui.kv("Issuing authority", cert.issuing_authority) }}
+        {{ ui.kv("Key ID", cert.key_id, mono=true) }}
+        {{ ui.kv("Payload SHA-256", cert.payload_sha256, mono=true, copy=true) }}
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2 class="panel-title">Share and download</h2>
+      <p class="field-hint">Public verification link for verifiers and employers:</p>
+      <div class="kv-row">
+        <div class="kv-value mono">
+          <span class="mono-block">{{ verification_url }}</span>
+          <button type="button" class="js-copy" data-copy="{{ verification_url }}">
+            {{ ui.icon_copy() }} Copy URL
+          </button>
+        </div>
+      </div>
+      <div>
+        <img src="/certificates/{{ cert.certificate_id }}/qr.png" alt="QR code pointing to verification page" class="qr-image">
+      </div>
+      <div class="btn-row">
+        <a href="/certificates/{{ cert.certificate_id }}/pdf" class="btn btn-secondary" target="_blank" rel="noopener">Download PDF</a>
+        <a href="/certificates/{{ cert.certificate_id }}/bundle.json" class="btn btn-secondary" download>Download verification bundle</a>
+        <a href="/verify/{{ cert.certificate_id }}" class="btn btn-secondary">Open public verify page</a>
+      </div>
+    </section>
+
+    {% if is_revoked %}
+    <section class="panel">
+      <h2 class="panel-title">Revocation status</h2>
+      <div class="kv-list">
+        {{ ui.kv("Status", "Revoked") }}
+        {{ ui.kv("Revoked at", revocation.revoked_at ~ " UTC") }}
+        {{ ui.kv("Revocation reason", revocation.reason) }}
+      </div>
+    </section>
+    {% else %}
+    <section class="panel">
+      <h2 class="panel-title">Revoke certificate</h2>
+      <p class="field-hint">Marking a certificate revoked preserves the digital signature and adds a formal revocation notice.</p>
+      <form action="/issuer/certificates/{{ cert.certificate_id }}/revoke" method="POST" id="revoke-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+        {{ ui.field(
+          "reason",
+          "Reason for revocation",
+          hint="Must be between 3 and 200 characters explaining why the credential is revoked."
+        ) }}
+        <div class="btn-row">
+          <button type="button" class="btn btn-secondary" data-open-dialog="revoke-dialog">Revoke</button>
+        </div>
+
+        <dialog id="revoke-dialog" class="confirm-dialog">
+          <h3 class="panel-title">Confirm Revocation</h3>
+          <p>Are you sure you want to revoke certificate <strong class="mono">{{ cert.certificate_id }}</strong>? This action cannot be undone.</p>
+          <div class="btn-row">
+            <button type="submit" class="btn btn-primary">Yes, revoke certificate</button>
+            <button type="button" class="btn btn-secondary" data-close-dialog="revoke-dialog">Cancel</button>
+          </div>
+        </dialog>
+      </form>
+    </section>
+    {% endif %}
+
+    <div class="btn-row">
+      <a href="/issuer" class="btn btn-secondary">Back to dashboard</a>
+    </div>
+  </div>
+
+  <div class="layout-aside">
+    {{ ui.note_panel(
+      "Revocation",
+      "Revoking a certificate never alters or deletes the signed database record, ensuring the digital signature remains mathematically valid. Revocations are stored in a distinct table and referenced during verification."
+    ) }}
+  </div>
+</div>
+{% endblock %}

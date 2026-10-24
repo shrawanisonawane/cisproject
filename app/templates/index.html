@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% import "components/macros.html" as ui %}
+
+{% block title %}Sanjivani University Certificate Registry - Cryptographic Credential Verification{% endblock %}
+
+{% block content %}
+{{ ui.page_header(
+  "Academic credentials",
+  "Certificates that prove themselves",
+  "Issue academic certificates that carry a digital signature, and check any certificate in seconds."
+) }}
+
+<div class="btn-row hero-actions">
+  <a href="/verify" class="btn btn-primary">Verify a certificate</a>
+  <a href="/issuer" class="btn btn-secondary">Issuer workspace</a>
+</div>
+
+<div class="layout-2col">
+  <div class="layout-main">
+    <section class="panel">
+      <h2 class="panel-title">How a certificate is issued</h2>
+      <ol class="explain-steps">
+        <li>The student details, course, grade, and issuance timestamp are normalized into an exact, canonical sequence of UTF-8 bytes.</li>
+        <li>A SHA-256 cryptographic digest of these exact bytes is calculated as the certificate payload fingerprint.</li>
+        <li>The institution's private key signs the canonical payload using RSASSA-PSS with SHA-256 and 32-byte salt. The signature and record are saved in the registry and embedded in a printable PDF with a verification QR code.</li>
+      </ol>
+    </section>
+
+    <section class="panel" id="how-it-works">
+      <h2 class="panel-title">How it is verified</h2>
+      <ol class="explain-steps">
+        <li>The verifier loads the certificate from the registry or submits a signed certificate bundle. The registry reconstructs the canonical bytes directly from current database fields.</li>
+        <li>The digital signature is checked against the rebuilt bytes using the institution's public key. If even a single byte differs, the cryptographic verification fails immediately.</li>
+        <li>The registry checks the revocation status. If the certificate was genuinely issued but later revoked, its authentic signature is confirmed while clearly marking the credential as revoked.</li>
+      </ol>
+    </section>
+
+    <section class="panel">
+      <h2 class="panel-title">Why tampering is detected</h2>
+      <p>Digital signatures establish mathematical proof of integrity and authenticity. Changing a single character in a student's name, grade, or course alters the canonical bytes completely due to the avalanche effect of SHA-256 hashing. Because only the institution possesses the private key, an attacker cannot forge a valid signature for altered data.</p>
+    </section>
+  </div>
+
+  <div class="layout-aside">
+    {{ ui.note_panel(
+      "Hash vs signature",
+      "A hash detects change, but anyone with computer access can recompute a hash for modified data. Only the private key holder can produce an authentic signature. Therefore, the signature proves both that the data has not changed and that this specific institution issued it."
+    ) }}
+  </div>
+</div>
+{% endblock %}
